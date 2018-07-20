@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -8,9 +9,10 @@
 #define MAXIMUM_INPUT 1024
 #define DELIMITER " "
 
-void parse_input(char **args, int *size);
+void parse_input(char **args, int *size, char *string);
 void start_child(pid_t pid, char **args, int *size);
 void print_arguments(char **args, int *size);
+void get_input(char *args, const int SIZE);
 
 int main(){
   pid_t nProcess;
@@ -23,6 +25,7 @@ int main(){
   int size = 10;
   char **arguments = (char **)malloc(size);
 
+  
   if(nProcess == 0)
     start_child(nProcess, arguments, &size);
   
@@ -37,14 +40,21 @@ int main(){
   return 0;
 }
 
+void get_input(char *args, const int SIZE){
+  fgets(args, SIZE, stdin);
+  char *p = strchr(args, '\n');
+  if (p)  *p = 0;
+}
+
 void start_child(pid_t pid, char **args, int *size){
-  parse_input(args, size);
+  char input[10];
+  get_input(input, 10);
+
+  parse_input(args, size, input);
   print_arguments(args, size);
 
-  printf("type = %s\n", args[0]);
-  int i;
-  if(pid <= 0)
-    execvp(args[0], args);    
+  if(execvp(args[0], args) == -1)
+    printf("%s\n", strerror(errno));
 }
 
 void print_arguments(char **args, int *size){
@@ -54,9 +64,7 @@ void print_arguments(char **args, int *size){
   
 }
 
-void parse_input(char **args, int *size){
-  char string[MAXIMUM_INPUT];
-  strcpy(string, "echo helloworld!");
+void parse_input(char **args, int *size, char *string){
   const char delimiter[2] = DELIMITER;
   char *token;
 
@@ -68,6 +76,8 @@ void parse_input(char **args, int *size){
     *size += 1;
     token = strtok(NULL, delimiter);
   }
+
+  args[*size] = NULL;
 
   //Shrink block
   args = realloc(args, *size);
