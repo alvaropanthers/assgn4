@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -5,17 +6,25 @@
 #include <string.h>
 
 #define MAXIMUM_INPUT 1024
+#define DELIMITER " "
 
-void parseInput(char **args);
+void parse_input(char **args, int *size);
+void start_child(pid_t pid, char **args, int *size);
+void print_arguments(char **args, int *size);
 
 int main(){
   pid_t nProcess;
   nProcess = fork();
+  if(nProcess < 0){
+    printf("error creating new process\n");
+    return -1;
+  }
+  
+  int size = 10;
+  char **arguments = (char **)malloc(size);
 
-  char *arguments[10];
-  parseInput(arguments);
-  if(nProcess <= 0)
-    execlp(arguments[0], arguments[0], arguments[1], arguments[2], (char *)0);    
+  if(nProcess == 0)
+    start_child(nProcess, arguments, &size);
   
   if(nProcess > 0){
     printf("Parent execution is finished\n");
@@ -28,25 +37,38 @@ int main(){
   return 0;
 }
 
+void start_child(pid_t pid, char **args, int *size){
+  parse_input(args, size);
+  print_arguments(args, size);
 
-void parseInput(char **args){
+  printf("type = %s\n", args[0]);
+  int i;
+  if(pid <= 0)
+    execvp(args[0], args);    
+}
+
+void print_arguments(char **args, int *size){
+  int i;
+  for(i = 0; i < (*size); ++i)
+    printf("%s\n", args[i]);
+  
+}
+
+void parse_input(char **args, int *size){
   char string[MAXIMUM_INPUT];
-  strcpy(string, "cp file.txt file2.txt");
-  const char delimiter[2] = " ";
+  strcpy(string, "echo helloworld!");
+  const char delimiter[2] = DELIMITER;
   char *token;
 
   token = strtok(string, delimiter);
 
-  int counter = 0;
+  *size = 0;
   while(token != NULL){
-    args[counter] = token;
-    ++counter;
+    args[*size] = token;
+    *size += 1;
     token = strtok(NULL, delimiter);
   }
 
-  int i;
-  for(i = 0; i < counter; ++i){
-    printf("%s\n", args[i]);
-  }
-
+  //Shrink block
+  args = realloc(args, *size);
 }
