@@ -9,44 +9,88 @@
 #define MAXIMUM_INPUT 1024
 #define DELIMITER " "
 
-void parse_input(char **args, int *size, char *string);
-void start_child(pid_t pid, char **args, int *size);
+void parse_input(char **args, int *size, char *string, int *amp);
+void start_child(pid_t pid, char **args);
 void print_arguments(char **args, int *size);
 void get_input(char *args, const int SIZE);
+void input_handler(char **args, int *size, int *amp);
+pid_t start_process();
+void shell_body(char **args, int amp);
 
 int main(){
-
-  while(1){
-    pid_t nProcess;
-    nProcess = fork();
-    if(nProcess < 0){
-      printf("error creating new process\n");
-      return -1;
-    }
-  
+  int count = 0;
+  while(count < 10){
+    //Input stuff
     int size = MAXIMUM_INPUT / 2;
     char **arguments = (char **)malloc(size);
+    int amp = 0;
+    input_handler(arguments, &size, &amp);
+    //End of input stuff
 
-  
-    if(nProcess == 0)
-      start_child(nProcess, arguments, &size);
+    shell_body(arguments, amp);
     
-    wait((int *)0);
+    setbuf(stdout, 0);
+    setbuf(stderr, 0);
+
+    free(arguments);
+    
+    ++count;
   }
   return 0;
 }
 
-void start_child(pid_t pid, char **args, int *size){
-  char input[MAXIMUM_INPUT];
-  get_input(input, MAXIMUM_INPUT);
+void shell_body(char **args, int amp){
+   if(strcmp(args[0], "cd") == 0){
+      chdir(args[1]);
+    }else if(strcmp(args[0], "exit") == 0){
+      exit(0);
+    }else if(strcmp(args[0], "wait") == 0){
+      wait((int *)0);
+    }else{
+      pid_t pid = start_process();
+    
+      if(pid == 0)
+	start_child(pid, args);
 
-  parse_input(args, size, input);
+      if(!amp){
+	int status;
+	waitpid(pid, &status, WUNTRACED);
+      }
+    
+    }
 
+}
+
+pid_t start_process(){
+   pid_t pid;
+   pid = fork();
+   if(pid < 0){
+     printf("error creating new process\n");
+     return -1;
+   }
+   return pid;
+}
+
+void input_handler(char **args, int *size, int *amp){
+    char input[MAXIMUM_INPUT];
+    get_input(input, MAXIMUM_INPUT);
+    parse_input(args, size, input, amp);
+}
+
+void get_input(char *args, const int SIZE){
+  printf("shell>");
+  fgets(args, SIZE, stdin);
+  //Removing first instance of \n
+  char *p = strchr(args, '\n');
+  if (p)  *p = 0;
+}
+
+void start_child(pid_t pid, char **args){
   if(execvp(args[0], args) == -1)
     printf("%s\n", strerror(errno));
 }
 
-void parse_input(char **args, int *size, char *string){
+void parse_input(char **args, int *size, char *string, int *amp){
   char *token;
   token = strtok(string, DELIMITER);
 
@@ -57,15 +101,12 @@ void parse_input(char **args, int *size, char *string){
     token = strtok(NULL, DELIMITER);
   }
 
-  args[*size] = NULL;
-}
-
-void get_input(char *args, const int SIZE){
-  printf("shell>");
-  fgets(args, SIZE, stdin);
-  //Removing first instance of \n
-  char *p = strchr(args, '\n');
-  if (p)  *p = 0;
+  if(strcmp(args[*size - 1], "&") == 0){
+    *amp = 1;
+    args[*size - 1] = NULL;
+    --(*size);
+  }else
+    args[*size] = NULL;
 }
 
 void print_arguments(char **args, int *size){
