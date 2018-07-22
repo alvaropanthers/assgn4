@@ -1,3 +1,33 @@
+/*
+
+##########################################################
+
+## COP4338– Programming III – Summer C 2018
+
+## Prof. Jose F. Osorio
+
+## Student: alvaro orozco - 6072586
+
+##
+
+## Assignment #: 4
+
+## Specs: Part 2.b – pthread
+
+## Due Date: 07/20/2018 by 11:55pm
+
+##
+
+## Module Name: task2b.c
+
+##
+
+## I Certify that this program code has been written by me
+
+## and no part of it has been taken from any sources.
+
+##########################################################
+     */
 #include <unistd.h>
 #include <stdio.h>
 #include <pthread.h>
@@ -9,6 +39,22 @@ int SharedVariable = 0;
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_barrier_t barrier;
 #endif
+
+int isNumber(char number[])
+{
+    int i = 0;
+
+    //checking for negative numbers
+    if (number[0] == '-')
+        i = 1;
+    for (; number[i] != 0; i++)
+    {
+        if (number[i] > '9' || number[i] < '0')
+           return 0;
+    }
+    return 1;
+}
+
 
 void *SimpleThread(void *param) { 
   int *w = (int *)param;
@@ -43,6 +89,13 @@ int main(int argc, char **argv){
   if(argc != 2){
     printf("Must enter one param of type (int)\n");
     exit(-1);
+  }
+
+  for(int i = 1; i < argc; ++i){
+    if(!isNumber(argv[i])){
+	printf("params must be of type (int)\n");
+	exit(0);
+      }
   }
   
   int length = atoi(argv[argc - 1]);

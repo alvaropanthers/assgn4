@@ -1,3 +1,33 @@
+/*
+
+##########################################################
+
+## COP4338– Programming III – Summer C 2018
+
+## Prof. Jose F. Osorio
+
+## Student: alvaro orozco - 6072686
+
+##
+
+## Assignment #: 4
+
+## Specs: Part 1 – Command Line Shell
+
+## Due Date: 07/20/2018 by 11:55pm
+
+##
+
+## Module Name: myshell.c
+
+##
+
+## I Certify that this program code has been written by me
+
+## and no part of it has been taken from any sources.
+
+##########################################################
+     */
 #include <errno.h>
 #include <stdlib.h>
 #include <sys/types.h>
